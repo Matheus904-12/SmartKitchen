@@ -1,10 +1,9 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Platform, StatusBar, ScrollView, ActivityIndicator, Alert, Keyboard } from 'react-native';  
-import { MaterialIcons } from '@expo/vector-icons';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Platform, StatusBar, ScrollView, ActivityIndicator, Alert, Keyboard } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react'
 
 
 const alturaStatusBar = StatusBar.currentHeight
-
 const KEY_GPT = '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';
 
 export default function App() {
@@ -18,7 +17,6 @@ export default function App() {
   const [ingr4, defIngr4] = useState("");
   const [ocasiao, defOcasiao] = useState("");
 
-
   async function gerarReceita() {
     if (ingr1 === "" || ingr2 === "" || ingr3 === "" || ingr4 === "" || ocasiao === "") {
       Alert.alert("Atenção", "Informe todos os ingredientes!", [{ text: "Beleza!" }])
@@ -28,7 +26,38 @@ export default function App() {
     defLoad(true);
     Keyboard.dismiss();
 
-    
+    const prompt = `Sugira uma receita detalhada para o ${ocasiao} usando os ingredientes: ${ingr1}, ${ingr2}, ${ingr3} e ${ingr4} e pesquise a receita no YouTube. Caso encontre, informe o link.`;
+
+    fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${KEY_GPT}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.20,
+        max_tokens: 500,
+        top_p: 1,
+      })
+    })
+      .then(response => response.json())
+      .then((data) => {
+        console.log(data.choices[0].message.content);
+        defReceita(data.choices[0].message.content)
+      })
+      .catch((error) => {
+        console.log(error);
+      })
+      .finally(() => {
+        defLoad(false);
+      })
   }
 
   return (
@@ -71,7 +100,7 @@ export default function App() {
 
       <TouchableOpacity style={ESTILOS.button} onPress={gerarReceita}>
         <Text style={ESTILOS.buttonText}>Gerar receita</Text>
-        <MaterialIcons name="travel-explore" size={24} color="#FFF" />
+        <MaterialCommunityIcons name="food-variant" size={24} color="#FFF" />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 24, marginTop: 4, }} style={ESTILOS.containerScroll} showsVerticalScrollIndicator={false} >
@@ -85,10 +114,10 @@ export default function App() {
         {receita && (
           <View style={ESTILOS.content}>
             <Text style={ESTILOS.title}>Sua receita 👇</Text>
+            <Text style={{ lineHeight: 24 }}>{receita} </Text>
           </View>
         )}
       </ScrollView>
-
     </View>
   );
 }
@@ -127,7 +156,7 @@ const ESTILOS = StyleSheet.create({
     marginBottom: 16,
   },
   button: {
-    backgroundColor: '#FF5656',
+    backgroundColor: 'blue',
     width: '90%',
     borderRadius: 8,
     flexDirection: 'row',
@@ -158,5 +187,4 @@ const ESTILOS = StyleSheet.create({
     width: '90%',
     marginTop: 8,
   }
-
 })
